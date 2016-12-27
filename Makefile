@@ -500,6 +500,7 @@ COMMON_SRC = \
             drivers/io.c \
             drivers/light_led.c \
             drivers/resource.c \
+            drivers/rx_cc2500.c \
             drivers/rx_nrf24l01.c \
             drivers/rx_spi.c \
             drivers/rx_xn297.c \
@@ -534,6 +535,7 @@ COMMON_SRC = \
             io/serial_cli.c \
             io/statusindicator.c \
             msp/msp_serial.c \
+            rx/cc2500_frsky.c \
             rx/ibus.c \
             rx/jetiexbus.c \
             rx/msp.c \
