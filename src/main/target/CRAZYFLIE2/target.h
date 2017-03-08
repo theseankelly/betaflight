@@ -18,7 +18,54 @@
 
 #pragma once
 
-#define TARGET_BOARD_IDENTIFIER "CRF2"
+#define TARGET_BOARD_IDENTIFIER "CF20"
 
 #define USBD_PRODUCT_STRING     "Crazyflie 2.0"
 
+#define USABLE_TIMER_CHANNEL_COUNT 14
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(4) )
+
+#define LED0                    PD2
+#define LED1                    PC0
+#define LED2                    PC3
+
+// Using STM32F405RG, 64 pin package (LQFP64)
+// 16 pins per port, ports A, B, C, and also PD2
+#define TARGET_IO_PORTA         0xFFFF
+#define TARGET_IO_PORTB         0xFFFF
+#define TARGET_IO_PORTC         0xFFFF
+#define TARGET_IO_PORTD         (BIT(2))
+
+#define USE_VCP
+
+#define USE_UART2
+#define UART2_TX_PIN            PA1
+#define UART2_RX_PIN            PA3
+
+#define USE_UART3
+#define UART3_TX_PIN            PC10
+#define UART3_RX_PIN            PC11
+
+#define USE_UART6
+#define UART6_TX_PIN            PC6
+#define UART6_RX_PIN            PC7
+
+#define SERIAL_PORT_COUNT       4
+
+#define USE_I2C
+#define I2C_DEVICE              I2CDEV_3
+
+#define MPU_ADDRESS             0x69
+
+#define GYRO
+#define USE_GYRO_MPU6500
+#define GYRO_MPU6500_ALIGN      CW0_DEG
+
+#define ACC
+#define USE_ACC_MPU6500
+#define ACC_MPU6500_ALIGN       CW0_DEG
+
+#define USE_EXTI
+#define MPU_INT_EXTI            PC13
+
+#define BRUSHED_MOTORS
