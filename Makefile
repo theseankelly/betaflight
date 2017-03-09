@@ -16,7 +16,7 @@
 #
 
 # The target to build, see VALID_TARGETS below
-TARGET    ?= NAZE
+TARGET    ?=  CRAZYFLIE2
 
 # Compile-time options
 OPTIONS   ?=
@@ -25,7 +25,7 @@ OPTIONS   ?=
 OPBL      ?= no
 
 # Debugger optons, must be empty or GDB
-DEBUG     ?=
+DEBUG     ?= GDB
 
 # Insert the debugging hardfault debugger
 # releases should not be built with this flag as it does not disable pwm output

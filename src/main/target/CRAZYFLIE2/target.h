@@ -55,6 +55,8 @@
 #define USE_I2C
 #define I2C_DEVICE              I2CDEV_3
 
+// MPU9250 has the AD0 pin held high so the
+// address is 0x69 instead of the default 0x68
 #define MPU_ADDRESS             0x69
 
 #define GYRO
@@ -67,5 +69,10 @@
 
 #define USE_EXTI
 #define MPU_INT_EXTI            PC13
+
+#define DEFAULT_RX_FEATURE      FEATURE_RX_SERIAL
+#define SERIALRX_UART           SERIAL_PORT_USART6
+#define SERIALRX_PROVIDER       SERIALRX_SPEKTRUM1024
+#define RX_CHANNELS_TAER
 
 #define BRUSHED_MOTORS

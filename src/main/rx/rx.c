@@ -48,6 +48,7 @@
 #include "rx/rx.h"
 #include "rx/pwm.h"
 #include "rx/sbus.h"
+#include "rx/serialtarget.h"
 #include "rx/spektrum.h"
 #include "rx/sumd.h"
 #include "rx/sumh.h"
@@ -184,7 +185,9 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 #endif
 #ifdef USE_SERIALRX_IBUS
     case SERIALRX_IBUS:
-        enabled = ibusInit(rxConfig, rxRuntimeConfig);
+        //haaaaack
+        enabled = targetRxInit(rxConfig, rxRuntimeConfig);
+        //enabled = ibusInit(rxConfig, rxRuntimeConfig);
         break;
 #endif
 #ifdef USE_SERIALRX_JETIEXBUS
@@ -195,6 +198,11 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 #ifdef USE_SERIALRX_CRSF
     case SERIALRX_CRSF:
         enabled = crsfRxInit(rxConfig, rxRuntimeConfig);
+        break;
+#endif
+#ifdef USE_SERIALRX_TARGET
+    case SERIALRX_TARGET:
+        enabled = targetRxInit(rxConfig, rxRuntimeConfig);
         break;
 #endif
     default:
