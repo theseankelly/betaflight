@@ -25,7 +25,7 @@ OPTIONS   ?=
 OPBL      ?= no
 
 # Debugger optons, must be empty or GDB
-DEBUG     ?= GDB
+DEBUG     ?= 
 
 # Insert the debugging hardfault debugger
 # releases should not be built with this flag as it does not disable pwm output
