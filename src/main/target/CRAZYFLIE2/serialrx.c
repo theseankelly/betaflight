@@ -56,8 +56,8 @@ void routeIncommingPacket(syslinkPacket_t* slp)
     {
         crtpCommander_t *commanderPacket = (crtpCommander_t*)(slp->data);
 
-        // Only care about port 7 (generic setpoint) type 2 (RC PWM)
-        if( commanderPacket->hdr.port == 0x07 && commanderPacket->type == 0x02)
+        // Only care about port 7 (generic setpoint) type 3 (CPPM emulation)
+        if( commanderPacket->hdr.port == 0x07 && commanderPacket->type == 0x03)
         {
             // need to assume some bounds for rpy -- -50 to 50? for r, p
             // -400 to 400 for yaw?
@@ -171,16 +171,6 @@ static void dataReceive(uint16_t c)
     default:
         break;
     }
-
-
-//    if (framePosition < SPEK_FRAME_SIZE) {
-//        spekFrame[spekFramePosition++] = (uint8_t)c;
-//        if (spekFramePosition < SPEK_FRAME_SIZE) {
-//            rcFrameComplete = false;
-//        } else {
-//            rcFrameComplete = true;
-//        }
-//    }
 }
 
 

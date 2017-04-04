@@ -185,9 +185,7 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 #endif
 #ifdef USE_SERIALRX_IBUS
     case SERIALRX_IBUS:
-        //haaaaack
-        enabled = targetRxInit(rxConfig, rxRuntimeConfig);
-        //enabled = ibusInit(rxConfig, rxRuntimeConfig);
+        enabled = ibusInit(rxConfig, rxRuntimeConfig);
         break;
 #endif
 #ifdef USE_SERIALRX_JETIEXBUS
