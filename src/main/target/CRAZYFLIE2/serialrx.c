@@ -26,10 +26,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "rx/targetcustomserial.h"
 #include "io/serial.h"
 
 #include "rx/rx.h"
-#include "rx/serialtarget.h"
 #include "syslink.h"
 
 
@@ -196,7 +196,7 @@ static uint16_t readRawRC(const rxRuntimeConfig_t *rxRuntimeConfig, uint8_t chan
 }
 
 
-bool targetRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool targetCustomSerialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
 {
     rxRuntimeConfigPtr = rxRuntimeConfig;
 
@@ -206,7 +206,7 @@ bool targetRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
     }
 
     switch (rxConfig->serialrx_provider) {
-    case SERIALRX_TARGET:
+    case SERIALRX_TARGET_CUSTOM:
         break;
     }
 
