@@ -15,26 +15,44 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// This file implements the Crazyflie "Syslink" protocol. This is a UART
-// bridge between the NRF51 MCU and the STM32 MCU. Details on the
-// protocol can be found on the Crazyflie wiki:
-// https://wiki.bitcraze.io/doc:crazyflie:syslink:index?s[]=syslink
-//
-// This implementation is a subset of the full protocol targeting Rx
-// scenarios. Code is largely adapted from the Crazyflie 2.0 source.
+/*
+ * This file implements the custom Crazyflie serial Rx protocol which
+ * consists of CRTP packets sent from the onboard NRF51 over UART using
+ * the syslink protocol.
+ *
+ * The implementation supports two types of commander packets:
+ * - RPYT on port CRTP_PORT_SETPOINT
+ * - CPPM emulation on port CRTP_PORT_SETPOINT_GENERIC using type cppmEmuType
+ *
+ * The CPPM emulation packet type is recommended for use with this target.
+ *
+ * The RPYT type is mainly for legacy support (various mobile apps, python PC client,
+ * etc) and can be used with the following restrictions to ensure angles are accurately
+ * translated into PWM values:
+ * - Max angles for pitch and roll must be set to 50 degrees
+ * - Max yaw rate must be set to 400 degrees
+ *
+ * This implementation has been ported from the Crazyflie source code.
+ *
+ * For more information, see the following Crazyflie wiki pages:
+ * CRTP:    https://wiki.bitcraze.io/projects:crazyflie:crtp
+ * Syslink: https://wiki.bitcraze.io/doc:crazyflie:syslink:index
+ */
 
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "rx/targetcustomserial.h"
 #include "io/serial.h"
 
 #include "rx/rx.h"
+#include "rx/targetcustomserial.h"
 #include "syslink.h"
+#include "crtp.h"
 
+#define SYSLINK_BAUDRATE 1000000
 
-syslinkRxState_e rxState = waitForFirstStart;
-
+// Variables for the Syslink Rx state machine
+static syslinkRxState_e rxState = waitForFirstStart;
 static syslinkPacket_t slp;
 static uint8_t dataIndex = 0;
 static uint8_t cksum[2] = {0};
@@ -43,64 +61,61 @@ static uint8_t counter = 0;
 static rxRuntimeConfig_t *rxRuntimeConfigPtr;
 static serialPort_t *serialPort;
 
-#define SUPPORTED_CHANNEL_COUNT 12
+#define SUPPORTED_CHANNEL_COUNT (4 + CRTP_CPPM_EMU_MAX_AUX_CHANNELS)
 static uint32_t channelData[SUPPORTED_CHANNEL_COUNT];
 static bool rcFrameComplete = false;
 
-#define NEEDED_FRAME_INTERVAL 5000
-
-void routeIncommingPacket(syslinkPacket_t* slp)
+static void routeIncommingPacket(syslinkPacket_t* slp)
 {
-    // Only care about type zero (raw radio)
-    if(slp->type == 0)
-    {
-        crtpCommander_t *commanderPacket = (crtpCommander_t*)(slp->data);
+    // Only support packets of type SYSLINK_RADIO_RAW
+    if(slp->type == SYSLINK_RADIO_RAW) {
+        crtpPacket_t *crtpPacket = (crtpPacket_t*)(slp->data);
 
-        // Only care about port 7 (generic setpoint) type 3 (CPPM emulation)
-        if( commanderPacket->hdr.port == 0x07 && commanderPacket->type == 0x03)
-        {
-            // need to assume some bounds for rpy -- -50 to 50? for r, p
-            // -400 to 400 for yaw?
-
-            // convert from -50 through 50 to 1000 to 2000
-
-            // Need to scale the range to a 1000 swing, and apply offset to 1500.
-            // scale from current swing up to -500 to 500
-
-            // Using RX_CHANNELS_TAER
-
-
-            // Remap channels 0-3 from AERT (RPYT) to TAER
-            channelData[0] = commanderPacket->channels[3];
-            channelData[1] = commanderPacket->channels[0];
-            channelData[2] = commanderPacket->channels[1];
-            channelData[3] = commanderPacket->channels[2];
-
-            // Rest of the channels
-            uint8_t i;
-            for (i = 4; i < SUPPORTED_CHANNEL_COUNT; i++)
+        switch(crtpPacket->header.port) {
+            case CRTP_PORT_SETPOINT:
             {
-                channelData[i] = commanderPacket->channels[i];
+                crtpCommanderRPYT_t *crtpRYPTPacket =
+                        (crtpCommanderRPYT_t*)&crtpPacket->data[0];
+
+                // Write RPYT channels in TAER order
+
+                // Translate thrust from 0-MAX_UINT16 into a PWM_style value (1000-2000)
+                channelData[0] = (crtpRYPTPacket->thrust * 1000 / UINT16_MAX) + 1000;
+
+                // Translate RPY from an angle setpoint to a PWM-style value (1000-2000)
+                // For R and P, assume the client sends a max of -/+50 degrees (full range of 100)
+                // For Y, assume a max of -/+400 deg/s (full range of 800)
+                channelData[1] = (uint16_t)((crtpRYPTPacket->roll / 100 * 1000) + 1500);
+                channelData[2] = (uint16_t)((-crtpRYPTPacket->pitch / 100 * 1000) + 1500); // Pitch is inverted
+                channelData[3] = (uint16_t)((crtpRYPTPacket->yaw / 800 * 1000) + 1500);
+
+                rcFrameComplete = true;
+                break;
             }
+            case CRTP_PORT_SETPOINT_GENERIC:
+                // First byte of the packet is the type
+                // Only support the CPPM Emulation type
+                if(crtpPacket->data[0] == cppmEmuType) {
+                    crtpCommanderCPPMEmuPacket_t *crtpCppmPacket =
+                            (crtpCommanderCPPMEmuPacket_t*)&crtpPacket->data[1];
 
-//            // Thrust is a little different -- lets just pass it straight for now
-//            // 0 to UINT32_MAX maps from 1000 to 2000.
-//            channelData[0] = (commanderPacket->thrust * 1000 / UINT16_MAX) + 1000;
-//
-//                    //1500;
-//
-//            // roll
-//            channelData[1] = (uint16_t)((commanderPacket->roll / 100 * 1000) + 1500);
-//
-//            // Pitch -- this is negated
-//            channelData[2] = (uint16_t)(-1 * (commanderPacket->pitch / 100 * 1000) + 1500);
-//
-//            // Yaw
-//            channelData[3] = (uint16_t)((commanderPacket->yaw / 800 * 1000) + 1500);
+                    // Write RPYT channels in TAER order
+                    channelData[0] = crtpCppmPacket->channelThrust;
+                    channelData[1] = crtpCppmPacket->channelRoll;
+                    channelData[2] = crtpCppmPacket->channelPitch;
+                    channelData[3] = crtpCppmPacket->channelYaw;
 
-
-
-            rcFrameComplete = true;
+                    // Write the rest of the auxiliary channels
+                    uint8_t i;
+                    for (i = 0; i < crtpCppmPacket->hdr.numAuxChannels; i++) {
+                        channelData[i + 4] = crtpCppmPacket->channelAux[i];
+                    }
+                }
+                rcFrameComplete = true;
+                break;
+            default:
+                // Unsupported port - do nothing
+                break;
         }
     }
 }
@@ -109,71 +124,61 @@ void routeIncommingPacket(syslinkPacket_t* slp)
 static void dataReceive(uint16_t c)
 {
     counter++;
-    switch(rxState)
-    {
-    case waitForFirstStart:
-        rxState = (c == SYSLINK_START_BYTE1) ? waitForSecondStart : waitForFirstStart;
-        break;
-    case waitForSecondStart:
-        rxState = (c == SYSLINK_START_BYTE2) ? waitForType : waitForFirstStart;
-        break;
-    case waitForType:
-        cksum[0] = c;
-        cksum[1] = c;
-        slp.type = c;
-        rxState = waitForLengt;
-        break;
-    case waitForLengt:
-        if (c <= SYSLINK_MTU)
-        {
-            slp.length = c;
+    switch(rxState) {
+        case waitForFirstStart:
+            rxState = (c == SYSLINK_START_BYTE1) ? waitForSecondStart : waitForFirstStart;
+            break;
+        case waitForSecondStart:
+            rxState = (c == SYSLINK_START_BYTE2) ? waitForType : waitForFirstStart;
+            break;
+        case waitForType:
+            cksum[0] = c;
+            cksum[1] = c;
+            slp.type = c;
+            rxState = waitForLength;
+            break;
+        case waitForLength:
+            if (c <= SYSLINK_MTU) {
+                slp.length = c;
+                cksum[0] += c;
+                cksum[1] += cksum[0];
+                dataIndex = 0;
+                rxState = (c > 0) ? waitForData : waitForChksum1;
+            }
+            else {
+                rxState = waitForFirstStart;
+            }
+            break;
+        case waitForData:
+            slp.data[dataIndex] = c;
             cksum[0] += c;
             cksum[1] += cksum[0];
-            dataIndex = 0;
-            rxState = (c > 0) ? waitForData : waitForChksum1;
-        }
-        else
-        {
+            dataIndex++;
+            if (dataIndex == slp.length) {
+                rxState = waitForChksum1;
+            }
+            break;
+        case waitForChksum1:
+            if (cksum[0] == c) {
+                rxState = waitForChksum2;
+            }
+            else {
+                rxState = waitForFirstStart; //Checksum error
+            }
+            break;
+        case waitForChksum2:
+            if (cksum[1] == c) {
+                routeIncommingPacket(&slp);
+            }
+            else {
+                rxState = waitForFirstStart; //Checksum error
+            }
             rxState = waitForFirstStart;
-        }
-        break;
-    case waitForData:
-        slp.data[dataIndex] = c;
-        cksum[0] += c;
-        cksum[1] += cksum[0];
-        dataIndex++;
-        if (dataIndex == slp.length)
-        {
-            rxState = waitForChksum1;
-        }
-        break;
-    case waitForChksum1:
-        if (cksum[0] == c)
-        {
-            rxState = waitForChksum2;
-        }
-        else
-        {
-            rxState = waitForFirstStart; //Checksum error
-        }
-        break;
-    case waitForChksum2:
-        if (cksum[1] == c)
-        {
-            routeIncommingPacket(&slp);
-        }
-        else
-        {
-            rxState = waitForFirstStart; //Checksum error
-        }
-        rxState = waitForFirstStart;
-        break;
-    default:
-        break;
+            break;
+        default:
+            break;
     }
 }
-
-
 
 static uint8_t frameStatus(void)
 {
@@ -200,25 +205,25 @@ bool targetCustomSerialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxR
 {
     rxRuntimeConfigPtr = rxRuntimeConfig;
 
+    if(rxConfig->serialrx_provider != SERIALRX_TARGET_CUSTOM)
+    {
+        return false;
+    }
+
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
     if (!portConfig) {
         return false;
     }
 
-    switch (rxConfig->serialrx_provider) {
-    case SERIALRX_TARGET_CUSTOM:
-        break;
-    }
-
     rxRuntimeConfig->channelCount = SUPPORTED_CHANNEL_COUNT;
-    rxRuntimeConfig->rxRefreshRate = 10000; // ?? this is from devo
+    rxRuntimeConfig->rxRefreshRate = 20000; // Value taken from rx_spi.c (NRF24 is being used downstream)
     rxRuntimeConfig->rcReadRawFn = readRawRC;
     rxRuntimeConfig->rcFrameStatusFn = frameStatus;
 
     serialPort = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         dataReceive,
-        1000000,
+        SYSLINK_BAUDRATE,
         MODE_RX,
         SERIAL_NOT_INVERTED | SERIAL_STOPBITS_1 | SERIAL_PARITY_NO
         );

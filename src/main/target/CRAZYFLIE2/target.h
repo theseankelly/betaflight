@@ -14,7 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
-// Target code written and maintained by Sean Kelly (theseankelly@outlook.com)
+
+/*
+ * This target is for the Crazyflie 2.0 nanocopter board
+ *
+ * For details on using this target with the Crazyflie see:
+ * https://wiki.bitcraze.io/misc:hacks:betaflight
+ *
+ * Target code written and maintained by Sean Kelly (theseankelly@outlook.com)
+ */
 
 #pragma once
 
