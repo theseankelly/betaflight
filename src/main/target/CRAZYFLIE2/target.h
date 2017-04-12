@@ -30,8 +30,17 @@
 
 #define USBD_PRODUCT_STRING     "Crazyflie 2.0"
 
+// Uncomment this define to build for the Crazyflie
+// using the BigQuad expansion deck
+//#define CRAZYFLIE2_USE_BIG_QUAD_DECK
+
 #define USABLE_TIMER_CHANNEL_COUNT 14
+#ifndef CRAZYFLIE2_USE_BIG_QUAD_DECK
 #define USED_TIMERS             ( TIM_N(2) | TIM_N(4) )
+#define BRUSHED_MOTORS
+#else
+#define USED_TIMERS             ( TIM_N(2) | TIM_N(3) )
+#endif //CRAZYFLIE2_USE_BIG_QUAD_DECK
 
 #define LED0                    PD2
 #define LED1                    PC0
@@ -89,5 +98,3 @@
 #define SERIALRX_UART           SERIAL_PORT_USART6
 #define SERIALRX_PROVIDER       SERIALRX_TARGET_CUSTOM
 #define RX_CHANNELS_TAER
-
-#define BRUSHED_MOTORS
