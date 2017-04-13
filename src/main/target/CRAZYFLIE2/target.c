@@ -19,20 +19,40 @@
 
 #include <platform.h>
 #include "drivers/io.h"
-
+#include "drivers/pwm_mapping.h"
 #include "drivers/timer.h"
 #include "drivers/dma.h"
 
+const uint16_t multiPPM[] = {
+    0xFFFF
+};
+
+const uint16_t multiPWM[] = {
+    PWM1  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM2 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM4 | (MAP_TO_MOTOR_OUTPUT << 8),
+    0xFFFF
+};
+
+const uint16_t airPPM[] = {
+        0xFFFF
+};
+
+const uint16_t airPWM[] = {
+        0xFFFF
+};
+
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #ifndef CRAZYFLIE2_USE_BIG_QUAD_DECK
-    { TIM2, IO_TAG(PB11), TIM_Channel_4, TIM_USE_MOTOR, 1, GPIO_AF_TIM2, NULL, 0, 0 }, // PWM2 - OUT2 (Motor 2)
-    { TIM2, IO_TAG(PA1),  TIM_Channel_2, TIM_USE_MOTOR, 1, GPIO_AF_TIM2, NULL, 0, 0 }, // PWM1 - OUT1 (Motor 1)
-    { TIM2, IO_TAG(PA15), TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_TIM2, NULL, 0, 0 }, // PWM3 - OUT3 (Motor 3)
-    { TIM4, IO_TAG(PB9),  TIM_Channel_4, TIM_USE_MOTOR, 1, GPIO_AF_TIM4, NULL, 0, 0 }, // PWM4 - OUT4 (Motor 4)
+    { TIM2, IO_TAG(PB11), TIM_Channel_4, TIM2_IRQn,    0, IOCFG_IPD, GPIO_AF_TIM2 }, // PWM2 - OUT2 (Motor 2)
+    { TIM2, IO_TAG(PA1),  TIM_Channel_2, TIM2_IRQn,    0, IOCFG_IPD, GPIO_AF_TIM2 }, // PWM1 - OUT1 (Motor 1)
+    { TIM2, IO_TAG(PA15), TIM_Channel_1, TIM2_IRQn,    0, IOCFG_IPD, GPIO_AF_TIM2 }, // PWM3 - OUT3 (Motor 3)
+    { TIM4, IO_TAG(PB9),  TIM_Channel_4, TIM4_IRQn,    0, IOCFG_IPD, GPIO_AF_TIM4 }, // PWM4 - OUT4 (Motor 4)
 #else
-    { TIM3, IO_TAG(PB4), TIM_Channel_1, TIM_USE_MOTOR, 1, GPIO_AF_TIM3, NULL, 0, 0 }, // PWM2 - OUT2 (Motor 2)
-    { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM_USE_MOTOR, 1, GPIO_AF_TIM2, NULL, 0, 0 }, // PWM1 - OUT1 (Motor 1)
-    { TIM3, IO_TAG(PB5), TIM_Channel_2, TIM_USE_MOTOR, 1, GPIO_AF_TIM3, NULL, 0, 0 }, // PWM3 - OUT3 (Motor 3)
-    { TIM2, IO_TAG(PA3), TIM_Channel_4, TIM_USE_MOTOR, 1, GPIO_AF_TIM2, NULL, 0, 0 }, // PWM4 - OUT4 (Motor 4)
+    { TIM3, IO_TAG(PB4), TIM_Channel_1, TIM3_IRQn,    0, IOCFG_IPD, GPIO_AF_TIM3 }, // PWM2 - OUT2 (Motor 2)
+    { TIM2, IO_TAG(PA2), TIM_Channel_3, TIM2_IRQn,    0, IOCFG_IPD, GPIO_AF_TIM2 }, // PWM1 - OUT1 (Motor 1)
+    { TIM3, IO_TAG(PB5), TIM_Channel_2, TIM3_IRQn,    0, IOCFG_IPD, GPIO_AF_TIM3 }, // PWM3 - OUT3 (Motor 3)
+    { TIM2, IO_TAG(PA3), TIM_Channel_4, TIM2_IRQn,    0, IOCFG_IPD, GPIO_AF_TIM2 }, // PWM4 - OUT4 (Motor 4)
 #endif
 };

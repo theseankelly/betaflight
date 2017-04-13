@@ -46,6 +46,9 @@
 #define LED1                    PC0
 #define LED2                    PC3
 
+// Number of available PWM outputs
+#define MAX_PWM_OUTPUT_PORTS    4
+
 // Using STM32F405RG, 64 pin package (LQFP64)
 // 16 pins per port, ports A, B, C, and also PD2
 #define TARGET_IO_PORTA         0xFFFF
@@ -70,7 +73,6 @@
 #define SERIAL_PORT_COUNT       4
 
 #define USE_I2C
-#define USE_I2C_DEVICE_3
 #define I2C_DEVICE              (I2CDEV_3)
 
 // MPU9250 has the AD0 pin held high so the

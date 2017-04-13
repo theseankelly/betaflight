@@ -42,6 +42,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <platform.h>
+
 #include "io/serial.h"
 
 #include "rx/rx.h"
@@ -228,6 +230,6 @@ bool targetCustomSerialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxR
         SERIAL_NOT_INVERTED | SERIAL_STOPBITS_1 | SERIAL_PARITY_NO
         );
 
-    return serialPort != NULL;
+    return serialPort != 0;
 }
 
