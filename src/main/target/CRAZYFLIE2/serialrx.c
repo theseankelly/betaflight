@@ -44,6 +44,8 @@
 
 #include "io/serial.h"
 
+#include "sensors/voltage.h"
+
 #include "rx/rx.h"
 #include "rx/targetcustomserial.h"
 #include "syslink.h"
@@ -64,6 +66,14 @@ static serialPort_t *serialPort;
 #define SUPPORTED_CHANNEL_COUNT (4 + CRTP_CPPM_EMU_MAX_AUX_CHANNELS)
 static uint32_t channelData[SUPPORTED_CHANNEL_COUNT];
 static bool rcFrameComplete = false;
+
+static float vbat = 0;
+
+void voltageMeterTargetCustomRead(voltageMeter_t *voltageMeter)
+{
+    voltageMeter->filtered = (uint16_t)(vbat * 10);
+    voltageMeter->unfiltered = voltageMeter->filtered;
+}
 
 static void routeIncommingPacket(syslinkPacket_t* slp)
 {
@@ -117,6 +127,10 @@ static void routeIncommingPacket(syslinkPacket_t* slp)
                 // Unsupported port - do nothing
                 break;
         }
+    } else if (slp->type == SYSLINK_PM_BATTERY_STATE) {
+        // Simply save off VBAT...
+        syslinkBatteryStatePacket_t* batteryStatePacket = (syslinkBatteryStatePacket_t*)slp->data;
+        vbat = batteryStatePacket->vbat;
     }
 }
 

@@ -59,6 +59,13 @@ typedef struct syslinkPacket_s
   char data[SYSLINK_MTU];
 } __attribute__((packed)) syslinkPacket_t;
 
+typedef struct syslinkBatteryStatePacket_s
+{
+  uint8_t flags;
+  float vbat;
+  float iset;
+} __attribute__((packed)) syslinkBatteryStatePacket_t;
+
 // State machine states for receiving syslink packets
 typedef enum
 {
