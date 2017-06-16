@@ -26,7 +26,8 @@
 typedef enum {
     VOLTAGE_METER_NONE = 0,
     VOLTAGE_METER_ADC,
-    VOLTAGE_METER_ESC
+    VOLTAGE_METER_ESC,
+    VOLTAGE_METER_TARGET_CUSTOM,
 } voltageMeterSource_e;
 
 // WARNING - do not mix usage of VOLTAGE_METER_* and VOLTAGE_SENSOR_*, they are separate concerns.
@@ -93,6 +94,7 @@ void voltageMeterESCRefresh(void);
 void voltageMeterESCReadCombined(voltageMeter_t *voltageMeter);
 void voltageMeterESCReadMotor(uint8_t motor, voltageMeter_t *voltageMeter);
 
+void voltageMeterTargetCustomRead(voltageMeter_t *voltageMeter);
 
 //
 // API for reading/configuring current meters by id.

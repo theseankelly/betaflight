@@ -129,6 +129,10 @@ void batteryUpdateVoltage(timeUs_t currentTimeUs)
             voltageMeterADCRead(VOLTAGE_SENSOR_ADC_VBAT, &voltageMeter);
             break;
 
+        case VOLTAGE_METER_TARGET_CUSTOM:
+          voltageMeterTargetCustomRead(&voltageMeter);
+          break;
+
         default:
         case VOLTAGE_METER_NONE:
             voltageMeterReset(&voltageMeter);
