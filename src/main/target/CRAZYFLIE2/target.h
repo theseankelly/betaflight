@@ -123,3 +123,29 @@
 #define DEFAULT_VOLTAGE_METER_SOURCE VOLTAGE_METER_TARGET_CUSTOM
 #define BRUSHED_MOTORS
 #endif
+
+#define USE_SPI
+#define USE_SPI_DEVICE_1
+
+#define SPI1_SCK_PIN             PA5
+#define SPI1_MISO_PIN            PA6
+#define SPI1_MOSI_PIN            PA7
+
+#define ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT
+#define USE_SDCARD
+#define USE_SDCARD_SPI1
+
+#define SDCARD_SPI_INSTANCE             SPI1
+#define SDCARD_SPI_CS_PIN               PC12
+// SPI1 is on the APB1 bus whose clock runs at 42MHz. Divide to under 400kHz for init:
+#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128 // 328kHz
+// Divide to under 25MHz for normal operation:
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 2 // 21MHz
+
+#define SDCARD_DMA_CHANNEL_TX               DMA2_Stream5
+#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA_FLAG_TCIF5
+#define SDCARD_DMA_CLK                      RCC_AHB1Periph_DMA2
+#define SDCARD_DMA_CHANNEL                  DMA_Channel_3
+
+
+
